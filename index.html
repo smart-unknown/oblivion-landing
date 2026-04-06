@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OBLIVION — Where Reality Ends</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{ob:{bg:'#060608',elevated:'#0D0D14',border:'#1A1A26',text:'#F0F0F5',muted:'#6B6B80',lime:'#CDFF00',coral:'#FF3355',cyan:'#00D4FF',dim:'#2A2A3A'}},fontFamily:{display:['"Syne"','sans-serif'],body:['"DM Sans"','sans-serif'],mono:['"JetBrains Mono"','monospace']}}}}
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{-webkit-font-smoothing:antialiased;background:#060608;color:#F0F0F5;font-family:'DM Sans',sans-serif;overflow-x:hidden}
+::selection{background:rgba(205,255,0,.2)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+@property --border-angle{syntax:'<angle>';initial-value:0deg;inherits:false}
+
+/* Boot screen */
+#boot{position:fixed;inset:0;z-index:99999;background:#060608;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#boot.done{animation:boot-out .6s ease forwards}
+#boot-text{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2rem,6vw,4rem);color:#CDFF00;letter-spacing:.15em;animation:boot-flicker .15s ease 3}
+#boot-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6B6B80;letter-spacing:.3em;opacity:0;animation:boot-fade .4s ease .5s forwards}
+@keyframes boot-flicker{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes boot-fade{to{opacity:1}}
+@keyframes boot-out{to{opacity:0;pointer-events:none;visibility:hidden}}
+
+/* Cursor */
+@media(pointer:fine){*{cursor:none!important}#cur-dot,#cur-ring{display:block}}
+@media(pointer:coarse){#cur-dot,#cur-ring,#mouse-glow{display:none!important}}
+#cur-dot{position:fixed;top:-3px;left:-3px;width:6px;height:6px;background:#CDFF00;border-radius:50%;pointer-events:none;z-index:10001;mix-blend-mode:difference;transition:width .15s,height .15s}
+#cur-ring{position:fixed;top:-15px;left:-15px;width:30px;height:30px;border:1px solid rgba(240,240,245,.2);border-radius:50%;pointer-events:none;z-index:10000;transition:width .3s cubic-bezier(.34,1.56,.64,1),height .3s cubic-bezier(.34,1.56,.64,1),border-color .3s}
+#cur-ring.hov{width:44px;height:44px;border-color:rgba(205,255,0,.5)}
+#mouse-glow{position:fixed;width:500px;height:500px;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(205,255,0,.03) 0%,transparent 70%);transform:translate(-50%,-50%)}
+
+/* Noise */
+#noise{position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.04;image-rendering:pixelated}
+
+/* Click ripple */
+.click-ripple{position:fixed;border-radius:50%;border:1px solid rgba(205,255,0,.4);pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:ripple .6s ease-out forwards;z-index:10000}
+@keyframes ripple{to{transform:translate(-50%,-50%) scale(50);opacity:0}}
+
+/* Progress bar */
+#progress{position:fixed;top:0;left:0;height:2px;background:#CDFF00;z-index:9999;transform-origin:left;transform:scaleX(0);transition:none}
+
+/* Header */
+#hdr{transition:all .4s ease}
+#hdr.scrolled{background:rgba(6,6,8,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.04)}
+
+/* Dual marquee */
+.marquee-row{display:flex;animation:marquee 30s linear infinite;width:max-content}
+.marquee-row.rev{animation-direction:reverse;animation-duration:35s}
+.marquee-row:hover{animation-play-state:paused}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
+/* Manifesto */
+.man-line{opacity:0;transform:translateY(40px);filter:blur(10px);transition:opacity .9s ease,transform .9s cubic-bezier(.16,1,.3,1),filter .9s ease}
+.man-line.vis{opacity:1;transform:translateY(0);filter:blur(0)}
+
+/* 3D tilt card */
+.tilt-card{transform-style:preserve-3d;transition:transform .1s ease-out;will-change:transform}
+.tilt-card .card-shine{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(circle at var(--sx,50%) var(--sy,50%),rgba(255,255,255,.12),transparent 60%);z-index:5}
+.tilt-card:hover .card-shine{opacity:1}
+.tilt-card .card-img{transition:transform .4s ease-out}
+
+/* Rotating border */
+.glow-wrap{padding:1px;border-radius:17px;background:conic-gradient(from var(--border-angle),#CDFF00,transparent 25%,transparent 50%,#FF3355,transparent 75%);animation:spin-border 4s linear infinite}
+.glow-wrap:nth-child(2){animation-delay:-1s;--border-angle:90deg}
+.glow-wrap:nth-child(3){animation-delay:-2s;--border-angle:180deg}
+.glow-wrap:nth-child(4){animation-delay:-3s;--border-angle:270deg}
+@keyframes spin-border{to{--border-angle:360deg}}
+.glow-inner{background:#0D0D14;border-radius:16px;height:100%;transition:background .3s}
+.glow-wrap:hover .glow-inner{background:#111119}
+
+/* Stat ring */
+.stat-ring circle{transition:stroke-dashoffset 1.5s cubic-bezier(.16,1,.3,1)}
+
+/* Testimonial */
+.test-body{transition:opacity .5s ease,transform .5s ease}
+.test-body.out{opacity:0;transform:translateY(12px)}
+.test-body.in{opacity:1;transform:translateY(0)}
+
+/* Glitch */
+.glitch{position:relative}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0}
+.glitch.active::before{color:#FF3355;opacity:.8;clip-path:polygon(0 0,100% 0,100% 33%,0 33%);animation:g1 .3s ease 2}
+.glitch.active::after{color:#00D4FF;opacity:.8;clip-path:polygon(0 67%,100% 67%,100% 100%,0 100%);animation:g2 .3s ease 2}
+@keyframes g1{0%,100%{transform:translate(0)}25%{transform:translate(-4px,-2px)}75%{transform:translate(3px,1px)}}
+@keyframes g2{0%,100%{transform:translate(0)}25%{transform:translate(4px,2px)}75%{transform:translate(-3px,-1px)}}
+
+/* Morph blob */
+.blob{position:absolute;border-radius:60% 40% 30% 70%/60% 30% 70% 40%;filter:blur(80px);animation:morph 8s ease-in-out infinite}
+.blob:nth-child(2){animation-delay:-3s;border-radius:40% 60% 70% 30%/50% 60% 30% 60%}
+.blob:nth-child(3){animation-delay:-5s;border-radius:30% 50% 60% 40%/40% 50% 60% 50%}
+@keyframes morph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%;transform:translate(0,0) scale(1)}33%{border-radius:40% 60% 70% 30%/50% 60% 30% 60%;transform:translate(30px,-20px) scale(1.05)}66%{border-radius:30% 50% 60% 40%/40% 50% 60% 50%;transform:translate(-20px,15px) scale(.95)}}
+
+/* Scroll reveal */
+.sr{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
+.sr.vis{opacity:1;transform:translateY(0)}
+
+/* Magnetic */
+.mag{transition:transform .15s ease}
+
+/* Page */
+body{opacity:0}
+body.ready{animation:pgIn .5s ease forwards}
+@keyframes pgIn{to{opacity:1}}
+
+@media(prefers-reduced-motion:reduce){
+*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+body{opacity:1}body.ready{animation:none;opacity:1}
+.sr{opacity:1;transform:none}.man-line{opacity:1;transform:none;filter:none}
+#boot{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- Boot Screen -->
+<div id="boot">
+  <div id="boot-text">OBLIVION</div>
+  <div id="boot-sub">INITIALIZING SPATIAL ENGINE</div>
+</div>
+
+<!-- Fixed layers -->
+<canvas id="noise"></canvas>
+<div id="cur-dot"></div>
+<div id="cur-ring"></div>
+<div id="mouse-glow"></div>
+<div id="progress"></div>
+
+<!-- Header -->
+<header id="hdr" class="fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10 py-5 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-2.5 int">
+      <div class="w-8 h-8 rounded-lg bg-ob-lime flex items-center justify-center">
+        <span class="iconify text-ob-bg text-sm" data-icon="ph:diamond-bold"></span>
+      </div>
+      <span class="font-display font-extrabold text-lg text-ob-text tracking-tight">OBLIVION</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8">
+      <a href="#manifesto" class="nav-scr text-sm font-medium text-ob-muted hover:text-ob-text transition-colors int">Manifesto</a>
+      <a href="#work" class="nav-scr text-sm font-medium text-ob-muted hover:text-ob-text transition-colors int">Work</a>
+      <a href="#features" class="nav-scr text-sm font-medium text-ob-muted hover:text-ob-text transition-colors int">Engine</a>
+      <a href="#cta" class="ml-2 inline-flex items-center px-5 py-2 text-sm font-semibold text-ob-bg bg-ob-lime rounded-full hover:bg-ob-text transition-colors duration-300 int mag">Request access</a>
+    </nav>
+    <button id="mob-btn" class="md:hidden w-10 h-10 flex items-center justify-center rounded-lg text-ob-muted hover:text-ob-text int" aria-label="Menu">
+      <span class="iconify text-xl" data-icon="ph:list-bold"></span>
+    </button>
+  </div>
+  <div id="mob-menu" class="md:hidden hidden fixed inset-0 bg-ob-bg/95 backdrop-blur-2xl z-40 flex flex-col items-center justify-center gap-8">
+    <button id="mob-close" class="absolute top-5 right-6 w-10 h-10 flex items-center justify-center text-ob-muted hover:text-ob-text int" aria-label="Close"><span class="iconify text-2xl" data-icon="ph:x-bold"></span></button>
+    <a href="#manifesto" class="text-2xl font-display font-bold text-ob-text mlink">Manifesto</a>
+    <a href="#work" class="text-2xl font-display font-bold text-ob-text mlink">Work</a>
+    <a href="#features" class="text-2xl font-display font-bold text-ob-text mlink">Engine</a>
+    <a href="#cta" class="mt-4 px-8 py-3 bg-ob-lime text-ob-bg font-bold rounded-full mlink">Request access</a>
+  </div>
+</header>
+
+<main>
+
+<!-- Hero -->
+<section id="hero" class="relative h-screen flex flex-col items-center overflow-hidden">
+  <canvas id="wire-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+  <div class="relative z-10 flex flex-col items-center justify-end h-full pb-20 sm:pb-24 px-6 text-center">
+    <p class="text-ob-muted text-base sm:text-lg md:text-xl max-w-md mb-8 leading-relaxed" style="margin-bottom:2rem">Where reality ends,<br class="hidden sm:inline"> creation begins.</p>
+    <div class="flex flex-wrap items-center justify-center gap-4 mb-6">
+      <a href="#cta" class="mag int inline-flex items-center px-7 py-3.5 bg-ob-lime text-ob-bg font-bold text-sm rounded-full hover:shadow-lg hover:shadow-ob-lime/20 transition-all duration-300">
+        Enter the void
+        <span class="iconify ml-2 text-base" data-icon="ph:arrow-right-bold"></span>
+      </a>
+      <a href="#" class="int inline-flex items-center px-7 py-3.5 text-ob-muted font-medium text-sm rounded-full border border-ob-border hover:border-ob-lime/40 hover:text-ob-lime transition-all duration-300">
+        <span class="iconify mr-2 text-base" data-icon="ph:play-fill"></span>
+        Watch the film
+      </a>
+    </div>
+    <p class="text-ob-muted/30 text-xs tracking-wide">Invite only · 2,400 spots remaining</p>
+  </div>
+  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-ob-muted/20 text-[10px] uppercase tracking-[.2em] animate-bounce">
+    <span>Scroll</span><span class="iconify text-sm" data-icon="ph:caret-down"></span>
+  </div>
+</section>
+
+<!-- Dual Marquee -->
+<div class="relative py-4 border-y border-ob-border overflow-hidden select-none space-y-0">
+  <div class="marquee-row text-xl sm:text-2xl md:text-3xl font-display font-extrabold uppercase tracking-[.2em]">
+    <span class="text-ob-lime/15 px-5">Spatial</span><span class="text-ob-coral/10 px-3">◆</span>
+    <span class="text-ob-coral/15 px-5">Generative</span><span class="text-ob-lime/10 px-3">◆</span>
+    <span class="text-ob-cyan/15 px-5">Immersive</span><span class="text-ob-coral/10 px-3">◆</span>
+    <span class="text-ob-lime/15 px-5">Neural</span><span class="text-ob-cyan/10 px-3">◆</span>
+    <span class="text-ob-coral/15 px-5">Infinite</span><span class="text-ob-lime/10 px-3">◆</span>
+    <span class="text-ob-lime/15 px-5">Spatial</span><span class="text-ob-coral/10 px-3">◆</span>
+    <span class="text-ob-coral/15 px-5">Generative</span><span class="text-ob-lime/10 px-3">◆</span>
+    <span class="text-ob-cyan/15 px-5">Immersive</span><span class="text-ob-coral/10 px-3">◆</span>
+    <span class="text-ob-lime/15 px-5">Neural</span><span class="text-ob-cyan/10 px-3">◆</span>
+    <span class="text-ob-coral/15 px-5">Infinite</span><span class="text-ob-lime/10 px-3">◆</span>
+  </div>
+  <div class="marquee-row rev text-lg sm:text-xl md:text-2xl font-display font-bold uppercase tracking-[.15em] -mt-1">
+    <span class="text-ob-cyan/10 px-5">Design</span><span class="text-ob-lime/8 px-3">◇</span>
+    <span class="text-ob-lime/10 px-5">Build</span><span class="text-ob-coral/8 px-3">◇</span>
+    <span class="text-ob-coral/10 px-5">Ship</span><span class="text-ob-lime/8 px-3">◇</span>
+    <span class="text-ob-cyan/10 px-5">Scale</span><span class="text-ob-coral/8 px-3">◇</span>
+    <span class="text-ob-lime/10 px-5">Evolve</span><span class="text-ob-cyan/8 px-3">◇</span>
+    <span class="text-ob-cyan/10 px-5">Design</span><span class="text-ob-lime/8 px-3">◇</span>
+    <span class="text-ob-lime/10 px-5">Build</span><span class="text-ob-coral/8 px-3">◇</span>
+    <span class="text-ob-coral/10 px-5">Ship</span><span class="text-ob-lime/8 px-3">◇</span>
+    <span class="text-ob-cyan/10 px-5">Scale</span><span class="text-ob-coral/8 px-3">◇</span>
+    <span class="text-ob-lime/10 px-5">Evolve</span><span class="text-ob-cyan/8 px-3">◇</span>
+  </div>
+</div>
+
+<!-- Manifesto -->
+<section id="manifesto" class="py-36 sm:py-48 px-6 lg:px-10">
+  <div class="max-w-5xl mx-auto">
+    <div class="man-line font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-[5.5rem] text-ob-text leading-[1.05] tracking-tight mb-2" style="--d:0">We don't push</div>
+    <div class="man-line font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-[5.5rem] text-ob-text leading-[1.05] tracking-tight mb-2" style="--d:1">boundaries.</div>
+    <div class="man-line font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-[5.5rem] leading-[1.05] tracking-tight mb-14" style="--d:2;background:linear-gradient(90deg,#CDFF00,#FF3355);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">We erase them.</div>
+    <div class="man-line text-ob-muted text-base sm:text-lg max-w-xl leading-relaxed" style="--d:3">OBLIVION is a spatial creation engine — not another tool in your stack, but a new dimension to think in. For creators who build what shouldn't exist.</div>
+  </div>
+</section>
+
+<!-- Showcase — 3D Tilt Cards -->
+<section id="work" class="py-28 sm:py-36 px-6 lg:px-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-14 sr">
+      <p class="font-mono text-ob-lime text-xs tracking-[.25em] uppercase mb-4">Selected Work</p>
+      <h2 class="font-display font-extrabold text-3xl sm:text-4xl md:text-5xl text-ob-text tracking-tight">Built in another<br>dimension.</h2>
+    </div>
+    <div class="grid md:grid-cols-2 gap-5">
+      <div class="tilt-card rounded-2xl overflow-hidden relative group int sr" style="transition-delay:0s">
+        <div class="card-shine"></div>
+        <img src="https://picsum.photos/seed/ob-phantom/800/600" alt="Phantom Protocol" class="card-img w-full aspect-[4/3] object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 p-6 sm:p-8 z-10">
+          <span class="font-mono text-ob-lime text-xs tracking-wider mb-2 block">01 — IMMERSIVE WEB</span>
+          <h3 class="font-display font-bold text-2xl sm:text-3xl text-white mb-1">Phantom Protocol</h3>
+          <p class="text-white/40 text-sm">Gaming studio launch experience</p>
+        </div>
+      </div>
+      <div class="tilt-card rounded-2xl overflow-hidden relative group int sr" style="transition-delay:.1s">
+        <div class="card-shine"></div>
+        <img src="https://picsum.photos/seed/ob-solaris/800/600" alt="Solaris Interface" class="card-img w-full aspect-[4/3] object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 p-6 sm:p-8 z-10">
+          <span class="font-mono text-ob-coral text-xs tracking-wider mb-2 block">02 — SPATIAL OS</span>
+          <h3 class="font-display font-bold text-2xl sm:text-3xl text-white mb-1">Solaris Interface</h3>
+          <p class="text-white/40 text-sm">Autonomous vehicle control system</p>
+        </div>
+      </div>
+      <div class="tilt-card rounded-2xl overflow-hidden relative group int sr" style="transition-delay:.2s">
+        <div class="card-shine"></div>
+        <img src="https://picsum.photos/seed/ob-echo/800/600" alt="Echo Chamber" class="card-img w-full aspect-[4/3] object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 p-6 sm:p-8 z-10">
+          <span class="font-mono text-ob-cyan text-xs tracking-wider mb-2 block">03 — GENERATIVE AUDIO</span>
+          <h3 class="font-display font-bold text-2xl sm:text-3xl text-white mb-1">Echo Chamber</h3>
+          <p class="text-white/40 text-sm">AI-powered music creation platform</p>
+        </div>
+      </div>
+      <div class="tilt-card rounded-2xl overflow-hidden relative group int sr" style="transition-delay:.3s">
+        <div class="card-shine"></div>
+        <img src="https://picsum.photos/seed/ob-void/800/600" alt="Void Architect" class="card-img w-full aspect-[4/3] object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 p-6 sm:p-8 z-10">
+          <span class="font-mono text-ob-lime text-xs tracking-wider mb-2 block">04 — WORLD BUILDING</span>
+          <h3 class="font-display font-bold text-2xl sm:text-3xl text-white mb-1">Void Architect</h3>
+          <p class="text-white/40 text-sm">3D environment design tool — 500K users</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features — Rotating Border Cards -->
+<section id="features" class="py-28 sm:py-36 px-6 lg:px-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-14 sr">
+      <p class="font-mono text-ob-coral text-xs tracking-[.25em] uppercase mb-4">The Engine</p>
+      <h2 class="font-display font-extrabold text-3xl sm:text-4xl md:text-5xl text-ob-text tracking-tight">What's under<br>the hood.</h2>
+    </div>
+    <div class="grid md:grid-cols-2 gap-5">
+      <div class="glow-wrap sr" style="transition-delay:0s">
+        <div class="glow-inner p-8 sm:p-10">
+          <div class="flex items-start justify-between mb-7">
+            <div class="w-12 h-12 rounded-xl bg-ob-lime/10 flex items-center justify-center"><span class="iconify text-ob-lime text-xl" data-icon="ph:cube-fill"></span></div>
+            <span class="font-mono text-ob-dim text-xs">01</span>
+          </div>
+          <h3 class="font-display font-bold text-xl sm:text-2xl text-ob-text mb-3">Spatial Engine</h3>
+          <p class="text-ob-muted text-sm leading-relaxed">Design in true 3D space — not flat rectangles pretending to be depth. Manipulate objects, lighting, and perspective in real-time.</p>
+        </div>
+      </div>
+      <div class="glow-wrap sr" style="transition-delay:.1s">
+        <div class="glow-inner p-8 sm:p-10">
+          <div class="flex items-start justify-between mb-7">
+            <div class="w-12 h-12 rounded-xl bg-ob-coral/10 flex items-center justify-center"><span class="iconify text-ob-coral text-xl" data-icon="ph:brain-fill"></span></div>
+            <span class="font-mono text-ob-dim text-xs">02</span>
+          </div>
+          <h3 class="font-display font-bold text-xl sm:text-2xl text-ob-text mb-3">Neural Mesh</h3>
+          <p class="text-ob-muted text-sm leading-relaxed">AI that maps spatial relationships, not just pixels. It understands depth, hierarchy, and intent at a structural level.</p>
+        </div>
+      </div>
+      <div class="glow-wrap sr" style="transition-delay:.2s">
+        <div class="glow-inner p-8 sm:p-10">
+          <div class="flex items-start justify-between mb-7">
+            <div class="w-12 h-12 rounded-xl bg-ob-cyan/10 flex items-center justify-center"><span class="iconify text-ob-cyan text-xl" data-icon="ph:lightning-fill"></span></div>
+            <span class="font-mono text-ob-dim text-xs">03</span>
+          </div>
+          <h3 class="font-display font-bold text-xl sm:text-2xl text-ob-text mb-3">Quantum Sync</h3>
+          <p class="text-ob-muted text-sm leading-relaxed">Multi-user spatial editing with zero perceived latency. See cursors, selections, and changes as they happen — no refresh, no conflict.</p>
+        </div>
+      </div>
+      <div class="glow-wrap sr" style="transition-delay:.3s">
+        <div class="glow-inner p-8 sm:p-10">
+          <div class="flex items-start justify-between mb-7">
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center"><span class="iconify text-purple-400 text-xl" data-icon="ph:arrows-out-cardinal-fill"></span></div>
+            <span class="font-mono text-ob-dim text-xs">04</span>
+          </div>
+          <h3 class="font-display font-bold text-xl sm:text-2xl text-ob-text mb-3">Dimension Shift</h3>
+          <p class="text-ob-muted text-sm leading-relaxed">Transform any 2D design into a navigable 3D space with one click. Export to WebGL, AR, or spatial computing formats.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats — Ring Progress -->
+<section class="py-24 px-6 lg:px-10 border-y border-ob-border relative" style="background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.008) 2px,rgba(255,255,255,.008) 4px)">
+  <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-12 sm:gap-8 text-center">
+    <div class="flex flex-col items-center sr" data-stat>
+      <div class="relative w-28 h-28 mb-4">
+        <svg class="stat-ring w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#1A1A26" stroke-width="3"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#CDFF00" stroke-width="3" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-ring/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="font-display font-extrabold text-2xl text-ob-text stat-num" data-target="128" data-suffix="M">0</span>
+        </div>
+      </div>
+      <div class="text-ob-muted text-sm font-medium">Assets Generated</div>
+    </div>
+    <div class="flex flex-col items-center sr" data-stat style="transition-delay:.15s">
+      <div class="relative w-28 h-28 mb-4">
+        <svg class="stat-ring w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#1A1A26" stroke-width="3"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#FF3355" stroke-width="3" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-ring/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="font-display font-extrabold text-2xl text-ob-text stat-num" data-target="8400" data-suffix="+">0</span>
+        </div>
+      </div>
+      <div class="text-ob-muted text-sm font-medium">Creators Active</div>
+    </div>
+    <div class="flex flex-col items-center sr" data-stat style="transition-delay:.3s">
+      <div class="relative w-28 h-28 mb-4">
+        <svg class="stat-ring w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#1A1A26" stroke-width="3"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#00D4FF" stroke-width="3" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-ring/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="font-display font-extrabold text-2xl stat-num" style="background:linear-gradient(90deg,#CDFF00,#00D4FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" data-target="99.9" data-suffix="%">0</span>
+        </div>
+      </div>
+      <div class="text-ob-muted text-sm font-medium">Uptime SLA</div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-28 sm:py-36 px-6 lg:px-10">
+  <div class="max-w-4xl mx-auto text-center sr">
+    <div class="test-body in" id="test-body">
+      <span class="iconify text-ob-lime/15 text-5xl mb-8 block mx-auto" data-icon="ph:quotes-fill"></span>
+      <blockquote class="font-display font-bold text-2xl sm:text-3xl md:text-4xl text-ob-text leading-snug tracking-tight mb-10" id="test-q">I stopped using Figma the day I tried OBLIVION.</blockquote>
+      <div class="flex items-center justify-center gap-3">
+        <img id="test-img" src="https://picsum.photos/seed/ob-t1/80/80" alt="" class="w-11 h-11 rounded-full object-cover ring-2 ring-ob-lime/20">
+        <div class="text-left">
+          <div class="text-sm font-semibold text-ob-text" id="test-name">Kai Nakamura</div>
+          <div class="text-xs text-ob-muted" id="test-role">Creative Director, Phantom Studio</div>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center justify-center gap-2 mt-10">
+      <span class="tdot w-2 h-2 rounded-full bg-ob-lime transition-colors" data-i="0"></span>
+      <span class="tdot w-2 h-2 rounded-full bg-ob-border transition-colors" data-i="1"></span>
+      <span class="tdot w-2 h-2 rounded-full bg-ob-border transition-colors" data-i="2"></span>
+    </div>
+  </div>
+</section>
+
+<!-- CTA — Morphing Blobs + Glitch -->
+<section id="cta" class="relative py-36 sm:py-44 px-6 lg:px-10 overflow-hidden">
+  <div class="blob w-[500px] h-[500px] bg-ob-lime/20 -top-40 -left-40 absolute"></div>
+  <div class="blob w-[400px] h-[400px] bg-ob-coral/15 -bottom-32 -right-32 absolute"></div>
+  <div class="blob w-[300px] h-[300px] bg-ob-cyan/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute"></div>
+  <div class="absolute inset-0 bg-ob-bg/60"></div>
+  <div class="relative z-10 max-w-3xl mx-auto text-center">
+    <h2 class="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight mb-6 leading-tight glitch" id="cta-head" data-text="Ready to vanish?">Ready to vanish?</h2>
+    <p class="text-white/60 text-lg sm:text-xl max-w-xl mx-auto mb-10">Join the creators who stopped designing pages and started building worlds.</p>
+    <a href="#" class="mag int inline-flex items-center px-9 py-4 bg-ob-lime text-ob-bg font-bold text-base rounded-full hover:shadow-2xl hover:shadow-ob-lime/25 hover:-translate-y-1 transition-all duration-300">
+      Request early access
+      <span class="iconify ml-2 text-lg" data-icon="ph:arrow-right-bold"></span>
+    </a>
+    <p class="text-white/30 text-xs mt-6 tracking-wide">Invite only · Free during beta · No credit card</p>
+  </div>
+</section>
+
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-ob-border py-16 px-6 lg:px-10">
+  <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
+    <div class="col-span-2 md:col-span-1">
+      <div class="flex items-center gap-2.5 mb-4">
+        <div class="w-7 h-7 rounded-md bg-ob-lime flex items-center justify-center"><span class="iconify text-ob-bg text-xs" data-icon="ph:diamond-bold"></span></div>
+        <span class="font-display font-extrabold text-base text-ob-text tracking-tight">OBLIVION</span>
+      </div>
+      <p class="text-ob-muted text-sm leading-relaxed">Spatial creation engine.<br>Not a tool. A dimension.</p>
+    </div>
+    <div>
+      <h4 class="text-ob-text font-semibold text-xs uppercase tracking-wider mb-4">Product</h4>
+      <ul class="space-y-2.5 text-sm text-ob-muted">
+        <li><a href="#" class="hover:text-ob-text transition-colors int">Engine</a></li>
+        <li><a href="#" class="hover:text-ob-text transition-colors int">Pricing</a></li>
+        <li><a href="#" class="hover:text-ob-text transition-colors int">Changelog</a></li>
+        <li><a href="#" class="hover:text-ob-text transition-colors int">Docs</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-ob-text font-semibold text-xs uppercase tracking-wider mb-4">Company</h4>
+      <ul class="space-y-2.5 text-sm text-ob-muted">
+        <li><a href="#" class="hover:text-ob-text transition-colors int">About</a></li>
+        <li><a href="#" class="hover:text-ob-text transition-colors int">Blog</a></li>
+        <li><a href="#" class="hover:text-ob-text transition-colors int">Careers</a></li>
+        <li><a href="#" class="hover:text-ob-text transition-colors int">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-ob-text font-semibold text-xs uppercase tracking-wider mb-4">Connect</h4>
+      <div class="flex gap-3">
+        <a href="#" class="w-9 h-9 rounded-lg bg-ob-elevated border border-ob-border hover:border-ob-lime/40 flex items-center justify-center transition-colors int" aria-label="X"><span class="iconify text-ob-muted text-sm" data-icon="ph:x-logo-fill"></span></a>
+        <a href="#" class="w-9 h-9 rounded-lg bg-ob-elevated border border-ob-border hover:border-ob-lime/40 flex items-center justify-center transition-colors int" aria-label="GitHub"><span class="iconify text-ob-muted text-sm" data-icon="ph:github-logo-fill"></span></a>
+        <a href="#" class="w-9 h-9 rounded-lg bg-ob-elevated border border-ob-border hover:border-ob-lime/40 flex items-center justify-center transition-colors int" aria-label="Discord"><span class="iconify text-ob-muted text-sm" data-icon="ph:discord-logo-fill"></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto border-t border-ob-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-ob-muted/40">
+    <p>© 2025 OBLIVION. All rights reserved.</p>
+    <div class="flex gap-6"><a href="#" class="hover:text-ob-muted transition-colors int">Privacy</a><a href="#" class="hover:text-ob-muted transition-colors int">Terms</a></div>
+  </div>
+</footer>
+
+<script>
+// ==================== BOOT ====================
+const bootEl=document.getElementById('boot');
+setTimeout(()=>{bootEl.classList.add('done');document.body.classList.add('ready');},1800);
+
+// ==================== NOISE ====================
+(function(){const c=document.getElementById('noise');c.width=200;c.height=200;const x=c.getContext('2d'),d=x.createImageData(200,200);for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=v;d.data[i+1]=v;d.data[i+2]=v;d.data[i+3]=8;}x.putImageData(d,0,0);})();
+
+// ==================== CURSOR ====================
+const dot=document.getElementById('cur-dot'),ring=document.getElementById('cur-ring'),glow=document.getElementById('mouse-glow');
+let mx=-100,my=-100,rx=-100,ry=-100;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;glow.style.left=mx+'px';glow.style.top=my+'px';dot.style.transform=`translate(${mx}px,${my}px)`;});
+(function cLoop(){rx+=(mx-rx)*.14;ry+=(my-ry)*.14;ring.style.transform=`translate(${rx}px,${ry}px)`;requestAnimationFrame(cLoop);})();
+document.querySelectorAll('a,button,.int').forEach(el=>{el.addEventListener('mouseenter',()=>ring.classList.add('hov'));el.addEventListener('mouseleave',()=>ring.classList.remove('hov'));});
+
+// ==================== CLICK RIPPLE ====================
+document.addEventListener('click',e=>{const r=document.createElement('div');r.className='click-ripple';r.style.left=e.clientX+'px';r.style.top=e.clientY+'px';r.style.width='10px';r.style.height='10px';document.body.appendChild(r);setTimeout(()=>r.remove(),650);});
+
+// ==================== PROGRESS BAR ====================
+const prog=document.getElementById('progress');
+window.addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-window.innerHeight;prog.style.transform=`scaleX(${h>0?window.scrollY/h:0})`;},{passive:true});
+
+// ==================== HEADER ====================
+const hdr=document.getElementById('hdr');
+window.addEventListener('scroll',()=>{hdr.classList.toggle('scrolled',window.scrollY>50);},{passive:true});
+
+// ==================== MOBILE MENU ====================
+const mm=document.getElementById('mob-menu');
+document.getElementById('mob-btn').addEventListener('click',()=>mm.classList.remove('hidden'));
+document.getElementById('mob-close').addEventListener('click',()=>mm.classList.add('hidden'));
+mm.querySelectorAll('.mlink').forEach(l=>l.addEventListener('click',()=>mm.classList.add('hidden')));
+
+// ==================== 3D WIREFRAME ====================
+const wc=document.getElementById('wire-canvas'),wx=wc.getContext('2d');
+let wmx=-9999,wmy=-9999;
+const heroEl=document.getElementById('hero');
+heroEl.addEventListener('mousemove',e=>{const r=wc.getBoundingClientRect();wmx=(e.clientX-r.left)*(wc.width/r.width);wmy=(e.clientY-r.top)*(wc.height/r.height);});
+heroEl.addEventListener('mouseleave',()=>{wmx=-9999;wmy=-9999;});
+
+// Icosahedron
+const phi=(1+Math.sqrt(5))/2;
+const icoVerts=[[0,1,phi],[0,-1,phi],[0,1,-phi],[0,-1,-phi],[1,phi,0],[-1,phi,0],[1,-phi,0],[-1,-phi,0],[phi,0,1],[-phi,0,1],[phi,0,-1],[-phi,0,-1]];
+icoVerts.forEach(v=>{const l=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);v[0]/=l;v[1]/=l;v[2]/=l;});
+const icoEdges=[];
+for(let i=0;i<12;i++)for(let j=i+1;j<12;j++){const dx=icoVerts[i][0]-icoVerts[j][0],dy=icoVerts[i][1]-icoVerts[j][1],dz=icoVerts[i][2]-icoVerts[j][2];if(Math.sqrt(dx*dx+dy*dy+dz*dz)<1.2)icoEdges.push([i,j]);}
+
+// Background particles
+let bgParts=[];
+function initWire(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  wc.width=wc.offsetWidth*dpr;wc.height=wc.offsetHeight*dpr;
+  wx.scale(dpr,dpr);
+  bgParts=[];
+  const w=wc.offsetWidth,h=wc.offsetHeight;
+  for(let i=0;i<70;i++)bgParts.push({x:Math.random()*w,y:Math.random()*h,s:Math.random()*1.2+.3,sp:Math.random()*.25+.08,o:Math.random()*.25+.05,dr:Math.random()*Math.PI*2});
+}
+
+function rotY(v,a){const c=Math.cos(a),s=Math.sin(a);return[v[0]*c+v[2]*s,v[1],-v[0]*s+v[2]*c];}
+function rotX(v,a){const c=Math.cos(a),s=Math.sin(a);return[v[0],v[1]*c-v[2]*s,v[1]*s+v[2]*c];}
+function proj(v,cx,cy,sz,fov){const sc=fov/(fov+v[2]);return{x:cx+v[0]*sc*sz,y:cy+v[1]*sc*sz,sc};}
+
+let baseRY=0,baseRX=0,curRY=0,curRX=0;
+function drawWire(){
+  const w=wc.offsetWidth,h=wc.offsetHeight;
+  wx.clearRect(0,0,w,h);
+  const now=Date.now()*.001;
+  const cx=w/2,cy=h*.36;
+  const sz=Math.min(w,h)*.22;
+  const fov=3;
+  const isMob=w<768;
+
+  // Mouse influence
+  const nmx=wmx>=0?(wmx/w-.5)*2:0;
+  const nmy=wmy>=0?(wmy/h-.5)*2:0;
+  baseRY+=.003;baseRX+=.002;
+  const tRY=baseRY+nmx*.4;
+  const tRX=baseRX+nmy*.25;
+  curRY+=(tRY-curRY)*.06;curRX+=(tRX-curRX)*.06;
+
+  // Draw bg particles
+  wx.globalCompositeOperation='lighter';
+  for(const p of bgParts){
+    p.y-=p.sp;p.dr+=.003;
+    p.x+=Math.sin(p.dr)*.3;
+    if(p.y<-5){p.y=h+5;p.x=Math.random()*w;}
+    const px=isMob?0:(nmx*-8*p.o);
+    const py=isMob?0:(nmy*-8*p.o);
+    wx.fillStyle=`rgba(205,255,0,${p.o})`;
+    wx.fillRect(p.x+px,p.y+py,p.s,p.s);
+  }
+
+  // Transform icosahedron vertices
+  const transformed=[];
+  for(const v of icoVerts){
+    let rv=rotY(v,curRY);rv=rotX(rv,curRX);
+    transformed.push(rv);
+  }
+
+  // Draw edges — glow pass
+  for(const[i,j]of icoEdges){
+    const a=proj(transformed[i],cx,cy,sz,fov);
+    const b=proj(transformed[j],cx,cy,sz,fov);
+    const avgZ=(transformed[i][2]+transformed[j][2])/2;
+    const depth=(avgZ+1)/2;
+    const alpha=.04+depth*.08;
+    wx.strokeStyle=`rgba(205,255,0,${alpha})`;
+    wx.lineWidth=3;
+    wx.beginPath();wx.moveTo(a.x,a.y);wx.lineTo(b.x,b.y);wx.stroke();
+  }
+  // Draw edges — sharp pass
+  for(const[i,j]of icoEdges){
+    const a=proj(transformed[i],cx,cy,sz,fov);
+    const b=proj(transformed[j],cx,cy,sz,fov);
+    const avgZ=(transformed[i][2]+transformed[j][2])/2;
+    const depth=(avgZ+1)/2;
+    const alpha=.08+depth*.35;
+    // Color shift: front=lime, back=cyan
+    const hue=80-depth*60;
+    wx.strokeStyle=`hsla(${hue},100%,${50+depth*15}%,${alpha})`;
+    wx.lineWidth=.8;
+    wx.beginPath();wx.moveTo(a.x,a.y);wx.lineTo(b.x,b.y);wx.stroke();
+  }
+  // Draw vertices
+  for(const v of transformed){
+    const p=proj(v,cx,cy,sz,fov);
+    const depth=(v[2]+1)/2;
+    const r=1+depth*1.5;
+    wx.fillStyle=`rgba(205,255,0,${.15+depth*.4})`;
+    wx.beginPath();wx.arc(p.x,p.y,Math.max(.5,r),0,Math.PI*2);wx.fill();
+  }
+
+  // Mouse repel on wireframe (visual only — slight vertex distortion)
+  wx.globalCompositeOperation='source-over';
+  requestAnimationFrame(drawWire);
+}
+
+document.fonts.ready.then(()=>{initWire();drawWire();});
+let rzt;window.addEventListener('resize',()=>{clearTimeout(rzt);rzt=setTimeout(initWire,250);});
+
+// ==================== TEXT SCRAMBLE ====================
+const sch='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#&';
+function scram(el,fin,dur=350){const st=18,iv=dur/st;let s=0;const t=setInterval(()=>{let r='';for(let i=0;i<fin.length;i++)r+=i<(s/st)*fin.length?fin[i]:sch[Math.floor(Math.random()*sch.length)];el.textContent=r;s++;if(s>st){el.textContent=fin;clearInterval(t);}},iv);}
+document.querySelectorAll('.nav-scr').forEach(a=>{const o=a.textContent;a.addEventListener('mouseenter',()=>scram(a,o));});
+
+// ==================== MAGNETIC ====================
+document.querySelectorAll('.mag').forEach(btn=>{btn.addEventListener('mousemove',e=>{const r=btn.getBoundingClientRect();btn.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.2}px,${(e.clientY-r.top-r.height/2)*.2}px)`;});btn.addEventListener('mouseleave',()=>{btn.style.transition='transform .5s cubic-bezier(.34,1.56,.64,1)';btn.style.transform='translate(0,0)';setTimeout(()=>btn.style.transition='',500);});});
+
+// ==================== SCROLL REVEAL ====================
+const srObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');srObs.unobserve(e.target);}});},{threshold:.12,rootMargin:'0px 0px -30px 0px'});
+document.querySelectorAll('.sr').forEach(el=>srObs.observe(el));
+
+// ==================== MANIFESTO ====================
+const mObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){const d=parseInt(e.target.style.getPropertyValue('--d'))||0;setTimeout(()=>e.target.classList.add('vis'),d*180);mObs.unobserve(e.target);}});},{threshold:.25});
+document.querySelectorAll('.man-line').forEach(el=>mObs.observe(el));
+
+// ==================== 3D TILT CARDS ====================
+document.querySelectorAll('.tilt-card').forEach(card=>{
+  const shine=card.querySelector('.card-shine');
+  const img=card.querySelector('.card-img');
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-.5;
+    const y=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`perspective(800px) rotateY(${x*12}deg) rotateX(${-y*12}deg) scale(1.02)`;
+    if(shine){shine.style.setProperty('--sx',(e.clientX-r.left)+'px');shine.style.setProperty('--sy',(e.clientY-r.top)+'px');}
+    if(img)img.style.transform=`translate(${x*-8}px,${y*-8}px) scale(1.05)`;
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform='perspective(800px) rotateY(0) rotateX(0) scale(1)';
+    card.style.transition='transform .5s cubic-bezier(.34,1.56,.64,1)';
+    if(img){img.style.transform='translate(0,0) scale(1)';img.style.transition='transform .5s ease';}
+    setTimeout(()=>{card.style.transition='transform .1s ease-out';if(img)img.style.transition='transform .4s ease-out';},500);
+  });
+});
+
+// ==================== STAT RINGS ====================
+function easeOut(t){return t*(2-t);}
+function animNum(el,target,dur=1400){
+  const pre=el.dataset.prefix||'',suf=el.dataset.suffix||'';
+  const isFloat=target%1!==0;
+  const start=performance.now();
+  function tick(now){const p=Math.min((now-start)/dur,1);const v=target*easeOut(p);el.textContent=pre+(isFloat?v.toFixed(1):Math.floor(v))+suf;if(p<1)requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);
+}
+const stObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  const numEl=e.target.querySelector('.stat-num');
+  const ringEl=e.target.querySelector('[data-ring]');
+  if(numEl&&!numEl.dataset.done){
+    numEl.dataset.done='1';
+    animNum(numEl,parseFloat(numEl.dataset.target));
+    if(ringEl){
+      const target=parseFloat(numEl.dataset.target);
+      const maxMap={128:263.9,8400:220,99.9:263.5};
+      const maxOff=maxMap[target]||200;
+      ringEl.style.strokeDashoffset=maxOff*.15;// leave 15% unfilled for style
+    }
+  }
+  stObs.unobserve(e.target);
+}});},{threshold:.5});
+document.querySelectorAll('[data-stat]').forEach(el=>stObs.observe(el));
+
+// ==================== TESTIMONIALS ====================
+const tests=[
+  {q:"I stopped using Figma the day I tried OBLIVION.",n:"Kai Nakamura",r:"Creative Director, Phantom Studio",img:"ob-t1"},
+  {q:"It's not a tool. It's a creative partner that speaks my language.",n:"Elena Voss",r:"Founder, Deepframe",img:"ob-t2"},
+  {q:"My team shipped 3x faster. The quality jump was obscene.",n:"Ravi Patel",r:"VP Design, NovaCorp",img:"ob-t3"}
+];
+let curT=0;
+const tb=document.getElementById('test-body'),tq=document.getElementById('test-q'),tn=document.getElementById('test-name'),tr=document.getElementById('test-role'),ti=document.getElementById('test-img'),tds=document.querySelectorAll('.tdot');
+function setTest(i){
+  tb.classList.remove('in');tb.classList.add('out');
+  setTimeout(()=>{tq.textContent=tests[i].q;tn.textContent=tests[i].n;tr.textContent=tests[i].r;ti.src=`https://picsum.photos/seed/${tests[i].img}/80/80`;tds.forEach((d,j)=>{d.className=`tdot w-2 h-2 rounded-full transition-colors ${j===i?'bg-ob-lime':'bg-ob-border'}`;});tb.classList.remove('out');tb.classList.add('in');},450);
+}
+setInterval(()=>{curT=(curT+1)%tests.length;setTest(curT);},5500);
+tds.forEach(d=>d.addEventListener('click',()=>{curT=parseInt(d.dataset.i);setTest(curT);}));
+
+// ==================== GLITCH ON CTA ====================
+const ctaH=document.getElementById('cta-head');
+const gObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){ctaH.classList.add('active');scram(ctaH,ctaH.dataset.text,700);setTimeout(()=>ctaH.classList.remove('active'),700);gObs.unobserve(e.target);}});},{threshold:.5});
+gObs.observe(ctaH);
+
+// ==================== SMOOTH ANCHOR ====================
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',function(e){const t=document.querySelector(this.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'});}});});
+</script>
+</body>
+</html>
